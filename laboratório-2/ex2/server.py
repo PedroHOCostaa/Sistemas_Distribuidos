@@ -1,84 +1,69 @@
-# echo-server.py
-
 import socket
-import threading
-import hashlib
+import struct
 import os
+import logging
 
-#Dicionario com os usuarios e senhas
-users = {
-    "pedro"     :   hashlib.sha512(b"123mudar").hexdigest(),
-    "marcos"    :   hashlib.sha512(b"123mudar").hexdigest(),
-    "campiolo"  :   hashlib.sha512(b"123mudar").hexdigest(),
-}
+HOST = '127.0.0.1'  # Server IP address
+PORT = 65435        # Server port
 
+def add_file(conn, filename, file_size):
+    if not os.path.exists('server_files'):
+        os.makedirs('server_files')
+    filename = os.path.join('server_files', filename)
+    with open(filename, 'wb') as f:
+        while file_size:
+            chunk = conn.recv(min(file_size, 1024))
+            f.write(chunk)
+            file_size -= len(chunk)
+    logging.info(f'File {filename} added')
+    conn.sendall(struct.pack('>BBB', 2, 1, 1))  # SUCCESS
 
-HOST = "127.0.0.1"  # Standard loopback interface address (localhost)
-PORT = 65435  # Port to listen on (non-privileged ports are > 1023)
+def delete_file(conn, filename):
+    filename = os.path.join('server_files', filename)
+    os.remove(filename)
+    logging.info(f'File {filename} deleted')
+    conn.sendall(struct.pack('>BBB', 2, 2, 1))  # SUCCESS
 
-def handle_client(conn, addr):
-    print(f"Connected by {addr}")
-    while True:
-        data = conn.recv(1024)
-        
-        if not data:
-            break
-        
-        print(f"Received {repr(data)} from {addr}")
-        words = data.decode().split()  # Split the message into words
-        
-        if words[0] == 'CONNECT':
-            if words[1] in users and words[2] == users[words[1]]:
-                messagetosend = 'SUCCESS'
-            else:
-                messagetosend = 'ERROR'             
-            conn.sendall(messagetosend.encode())
-        else:
-            if words[0] == 'PWD':
-                messagetosend = os.getcwd()
-                conn.sendall(messagetosend.encode())
+def get_files_list(conn):
+    files = os.listdir('server_files')
+    for file in files:
+        conn.sendall(file.encode() + b'\n')
+    logging.info('File list sent')
+    conn.sendall(struct.pack('>BBB', 2, 3, 1))  # SUCCESS
 
-            else:
-                if words[0] == 'EXIT':
-                    messagetosend = 'EXIT'
-                    conn.sendall(messagetosend.encode())
-                    conn.close()
-                    break
-                else:
-                    if words[0] == 'CHDIR':
-                        try:
-                            os.chdir(words[1])
-                            messagetosend = 'SUCCESS'
-                        except OSError:
-                            messagetosend = 'ERROR'
-                        conn.sendall(messagetosend.encode())
-                    else:
-                        if words[0] == 'GETFILES':
-                            files = [name for name in os.listdir('.') if os.path.isfile(name)]
-                            if not files:
-                                messagetosend = 'No files found'
-                            else:
-                                messagetosend = ', '.join(files)
-                            conn.sendall(messagetosend.encode())
-                        else:
-                            if words[0] == 'GETDIRS':
-                                directories = [name for name in os.listdir('.') if os.path.isdir(name)]
-                                if not directories:
-                                    messagetosend = 'No directories found'
-                                else:
-                                    messagetosend = ', '.join(directories)
-                                conn.sendall(messagetosend.encode())
+def get_file(conn, filename):
+    filename = os.path.join('server_files', filename)
+    with open(filename, 'rb') as f:
+        data = f.read()
+    conn.sendall(struct.pack('>I', len(data)))
+    conn.sendall(data)
+    logging.info(f'File {filename} sent')
+    conn.sendall(struct.pack('>BBB', 2, 4, 1))  # SUCCESS
 
 def start_server():
-
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.bind((HOST, PORT))                                           
+    server.bind((HOST, PORT))
     server.listen()
-    print(f"Server is listening on {HOST}:{PORT}")
+
     while True:
         conn, addr = server.accept()
-        thread = threading.Thread(target=handle_client, args=(conn, addr))
-        thread.start()
-        print(f"Active connections: {threading.activeCount() - 1}")
+        with conn:
+            logging.info(f'Connected by {addr}')
+            while True:
+                try:
+                    msg_type, cmd_id, filename_size = struct.unpack('>BBB', conn.recv(3))
+                    filename = conn.recv(filename_size).decode()
+                    if cmd_id == 1:  # ADDFILE
+                        file_size, = struct.unpack('>I', conn.recv(4))
+                        add_file(conn, filename, file_size)
+                    elif cmd_id == 2:  # DELETE
+                        delete_file(conn, filename)
+                    elif cmd_id == 3:  # GETFILESLIST
+                        get_files_list(conn)
+                    elif cmd_id == 4:  # GETFILE
+                        get_file(conn, filename)
+                except struct.error:
+                    break
 
-start_server()
+if __name__ == '__main__':
+    start_server()
