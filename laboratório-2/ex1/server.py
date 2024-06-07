@@ -1,4 +1,9 @@
-# echo-server.py
+# Aplicação do server
+#
+# Autores:
+#          Marcos Rampaso   - 2149435
+#          Pedro Costa      - 2135663
+
 
 import socket
 import threading
@@ -14,7 +19,7 @@ users = {
 
 
 HOST = "127.0.0.1"  # (localhost)
-PORT = 65435
+PORT = 65432
 
 def handle_client(conn, addr):     # Função que lida com o cliente
     print(f"Connected by {addr}")  # Mostra o endereço do cliente
@@ -33,41 +38,65 @@ def handle_client(conn, addr):     # Função que lida com o cliente
             else:                                       # Se o usuário ou senha estiverem incorretos
                 messagetosend = 'ERROR'                 # Envia a mensagem de erro
             conn.sendall(messagetosend.encode())        
-        else:
-            if words[0] == 'PWD':                       # Se a primeira palavra for PWD
-                messagetosend = os.getcwd()             # Envia o diretório atual
-                conn.sendall(messagetosend.encode())    # Envia a mensagem
 
+        elif words[0] == 'PWD':                       # Se a primeira palavra for PWD
+            messagetosend = os.getcwd()             # Envia o diretório atual
+            conn.sendall(messagetosend.encode())    # Envia a mensagem
+
+        elif words[0] == 'EXIT':                  # Se a primeira palavra for EXIT
+            conn.close()                        # Encerra a conexão
+            break
+
+        elif words[0] == 'CHDIR':             # Se a primeira palavra for CHDIR
+            try:                            # Tenta mudar de diretório
+                os.chdir(words[1])          # Muda de diretório
+                messagetosend = 'SUCCESS'   # Envia a mensagem de sucesso
+            except OSError:                 # Se houver erro
+                messagetosend = 'ERROR'     # Envia a mensagem de erro
+                conn.sendall(messagetosend.encode())    #Envia a mensagem
+
+        elif words[0] == 'GETFILES':      # Se a primeira palavra for GETFILES
+            files = [name for name in os.listdir('.') if os.path.isfile(name)]  # Lista os arquivos
+            num_files = len(files)
+            if not files:               # Se não houver arquivos
+                messagetosend = '0'
+                conn.sendall(messagetosend.encode())
             else:
-                if words[0] == 'EXIT':                  # Se a primeira palavra for EXIT
-                    messagetosend = 'EXIT'                  
-                    conn.sendall(messagetosend.encode())# Envia a mensagem de saída
-                    conn.close()                        # Encerra a conexão
-                    break
-                else:
-                    if words[0] == 'CHDIR':             # Se a primeira palavra for CHDIR
-                        try:                            # Tenta mudar de diretório
-                            os.chdir(words[1])          # Muda de diretório
-                            messagetosend = 'SUCCESS'   # Envia a mensagem de sucesso
-                        except OSError:                 # Se houver erro
-                            messagetosend = 'ERROR'     # Envia a mensagem de erro
-                        conn.sendall(messagetosend.encode())    #Envia a mensagem
-                    else:
-                        if words[0] == 'GETFILES':      # Se a primeira palavra for GETFILES
-                            files = [name for name in os.listdir('.') if os.path.isfile(name)]  # Lista os arquivos
-                            if not files:               # Se não houver arquivos
-                                messagetosend = 'Nao foram eoncontrados arquivos'
-                            else:
-                                messagetosend = ', '.join(files)    # Envia a lista de arquivos
-                            conn.sendall(messagetosend.encode())
-                        else:
-                            if words[0] == 'GETDIRS': # Se a primeira palavra for GETDIRS
-                                directories = [name for name in os.listdir('.') if os.path.isdir(name)] # Lista os diretórios
-                                if not directories:
-                                    messagetosend = 'Nao foram encontrados diretorios'
-                                else:
-                                    messagetosend = ', '.join(directories) # Envia a lista de diretórios
-                                conn.sendall(messagetosend.encode())
+                tamanho = len(str(num_files))
+                conn.sendall(str(tamanho).encode())
+                conn.sendall(str(num_files).encode())
+                for i in range(num_files):
+                    tamanhoDoNome = len(files[i])
+                    tamanhoDoTamanho = len(str(tamanhoDoNome))
+                    nome = files[i]
+                    conn.sendall(str(tamanhoDoTamanho).encode())
+                    conn.sendall(str(tamanhoDoNome).encode())
+                    conn.sendall(nome.encode())
+                    print(f"tamanhoDoTamanho {tamanhoDoTamanho} tamanhoDoNome {tamanhoDoNome} nome {nome}")
+
+        elif words[0] == 'GETDIRS': # Se a primeira palavra for GETDIRS
+            directories = [name for name in os.listdir('.') if os.path.isdir(name)] # Lista os diretórios
+            num_directories = len(directories)
+            if not directories:
+                messagetosend = '0'
+                conn.sendall(messagetosend.encode())
+            else:
+                tamanho = len(str(num_directories))
+                conn.sendall(str(tamanho).encode())
+                conn.sendall(str(num_directories).encode())
+                for i in range(num_directories):
+                    tamanhoDoNome = len(directories[i])
+                    tamanhoDoTamanho = len(str(tamanhoDoNome))
+                    nome = directories[i]
+                    conn.sendall(str(tamanhoDoTamanho).encode())
+                    conn.sendall(str(tamanhoDoNome).encode())
+                    conn.sendall(nome.encode())
+                    print(f"tamanhoDoTamanho {tamanhoDoTamanho} tamanhoDoNome {tamanhoDoNome} nome {nome}")
+        else:
+            messagetosend = 'Comando invalido'
+            conn.sendall(messagetosend.encode())
+
+    print(f"Conexao encerrada com {addr}")  # Mostra que a conexão foi encerrada
 
 # Função para iniciar o servidor
 def start_server():

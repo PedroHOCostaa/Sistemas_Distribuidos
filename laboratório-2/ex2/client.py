@@ -9,8 +9,8 @@ import struct
 import os
 
 HOST = '127.0.0.1'  # Server IP address
-PORT = 65435       # Server port
-
+PORT = 65432       # Server port
+PORTALTERNATIVA = 65435
 # Função para adicionar um arquivo no servidor
 def add_file(s, filename):
     if not os.path.exists('client_files'):  #Verifica se existe o diretorio.
@@ -83,7 +83,10 @@ def get_file(s, filename):
 
 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:    # Cria um socket TCP
     try:
-        s.connect((HOST, PORT))                                     # Conecta ao servidor
+        try:
+            s.connect((HOST, PORT))                                     # Conecta ao servidor
+        except:
+            s.connect((HOST, PORTALTERNATIVA))                                     # Conecta ao servidor
         while True:
             command = input("Comandos > (ADDFILE, DELETE, GETFILESLIST, GETFILE) ou 'STOP' para sair: ")
             if command == 'STOP':                            # Se o comando for STOP, encerra a conexão

@@ -11,10 +11,10 @@ import threading
 
 
 HOST = '127.0.0.1'  # Server IP address
-PORT = 65435       # Server port
-
-#Todas as funções dentro do servidor estão com try e except, para que se houver algum erro
-#seja enviado ao cliente um cabeçalho indicando que houve um erro.
+PORT = 65432        # Server port
+PORTALTERNATIVA = 65435
+# Todas as funções dentro do servidor estão com try e except, para que se houver algum erro
+# Seja enviado ao cliente um cabeçalho indicando que houve um erro.
 
 # Configurando o logging para enviar mensagens para um arquivo chamado 'logfile.log'
 
@@ -101,20 +101,19 @@ def handle_client(conn, addr):
             break
 
 def start_server():
-    try:
-        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        try:                        #testa a porta padrão, caso falhe, testa secundária, caso falhe de novo informa ao log que houve erro.
-            server.bind((HOST, PORT))
-            server.listen()
-        except:
-            server.bind(HOST, 65433)
-            server.listen
-        while True:
-            conn, addr = server.accept()
-            thread = threading.Thread(target=handle_client, args=(conn, addr))
-            thread.start()
-            print(f"conexoes ativas: {threading.active_count() - 1}")
+
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:                        #testa a porta padrão, caso falhe, testa secundária, caso falhe de novo informa ao log que houve erro.
+        server.bind((HOST, PORT))
+        server.listen()
     except:
-        print("Erro ao inicializar o servidor")
-        logging.info(f'ERROR starting the server')
+        server.bind(HOST, PORTALTERNATIVA)
+        server.listen
+    while True:
+        conn, addr = server.accept()
+        thread = threading.Thread(target=handle_client, args=(conn, addr))
+        thread.start()
+        print(f"conexoes ativas: {threading.active_count() - 1}")
+
+
 start_server()

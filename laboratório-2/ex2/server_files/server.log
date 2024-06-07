@@ -2,3 +2,16 @@ INFO:root:ERROR starting the server
 INFO:root:ERROR starting the server
 INFO:root:Connected by ('127.0.0.1', 52110)
 INFO:root:ERROR starting the server
+INFO:root:ERROR starting the server
+INFO:root:ERROR starting the server
+INFO:root:Connected by ('127.0.0.1', 38716)
+INFO:root:File list sent 
+INFO:root:File list sent 
+INFO:root:File server_files/teste added
+INFO:root:Connected by ('127.0.0.1', 59038)
+INFO:root:File server_files/testeImagem.jpg added
+INFO:root:File server_files/testeImagem.jpg deleted
+INFO:root:Error no DELETEFILE
+INFO:root:File server_files/teste2 sent
+INFO:root:File server_files/teste2 sent
+INFO:root:File server_files/teste2 sent
