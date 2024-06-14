@@ -1,5 +1,6 @@
 {
     "files.associations": {
-        "servidor_processamento.C": "cpp"
+        "servidor_processamento.C": "cpp",
+        "stdio.h": "c"
     }
 }
