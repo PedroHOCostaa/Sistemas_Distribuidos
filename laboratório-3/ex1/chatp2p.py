@@ -62,8 +62,10 @@ def Enviar(nameProprio):
                 break
             else:
                 tipo == "ERRADO"
-            data = struct.pack('>BB', messageType, len(nameProprio)) + nameProprio.encode() + struct.pack('>B', len(message)) + message.encode()
-            s.sendto(data, (HOST, PORT))
+            if(tipo == "MSG" or tipo == "ECHO" or tipo == "URL" or tipo == "EMOJI"):
+                data = struct.pack('>BB', messageType, len(nameProprio)) + nameProprio.encode() + struct.pack('>B', len(message)) + message.encode()
+                s.sendto(data, (HOST, PORT))
+            tipo = ""
 
 def Receber(nameProprio):
     while True:
@@ -108,5 +110,4 @@ with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
     threadEnv.start()
     
     while True:
-
         pass

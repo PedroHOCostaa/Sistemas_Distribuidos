@@ -1,6 +1,15 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <pthread.h>
 #include "estruturas.h"
+
+#define PORT "8080"
+#define HOST "127.0.0.1"
 
 void insereNavioJogador(struct mapa* mapaJogador, struct navio* novoNavio)
 {
@@ -31,51 +40,55 @@ int realizarTiroJogador(struct mapa* mapaAdversario)
     return resultado;
 }
 
-int main()
+
+void jogo()
 {
+
     struct mapa* mapaJogadorUm = (struct mapa*)malloc(sizeof(struct mapa));;
     inicializaMapa(mapaJogadorUm);
     struct mapa* mapaJogadorDois = (struct mapa*)malloc(sizeof(struct mapa));;
     inicializaMapa(mapaJogadorDois);
-    int tipo;
-    int orientacao;
-
-    for(int i = 0; i < 1; i++)
+    int tipoJogo, qtdNavios[4], qtdTiros;
+    printf("Digite o tipo do jogo\n");
+    if(tipoJogo == 1)
     {
-        struct navio* novoNavioJogadorUm = (struct navio*)malloc(sizeof(struct navio));
-        printf("Digite o tipo do navio: ");
-        scanf("%d", &tipo);
-        printf("Digite a orientação do navio: ");
-        scanf("%d", &orientacao);
-        inicializaNavio(novoNavioJogadorUm, tipo, orientacao);
-
-        insereNavioJogador(mapaJogadorUm, novoNavioJogadorUm);
-        imprimirMeuMapa(mapaJogadorUm);
+        qtdNavios[0] = 1;
+        qtdNavios[1] = 1;
+        qtdNavios[2] = 1;
+        qtdNavios[3] = 1;
+        qtdTiros = 1;
+    }
+    if(tipoJogo == 1)
+    {
+        qtdNavios[0] = 2;
+        qtdNavios[1] = 2;
+        qtdNavios[2] = 1;
+        qtdNavios[3] = 1;
+        qtdTiros = 3;
     }
     
-    for(int i = 0; i < 1; i++)
-    {
-        struct navio* novoNavioJogadorDois = (struct navio*)malloc(sizeof(struct navio));
-        printf("Digite o tipo do navio: ");
-        scanf("%d", &tipo);
-        printf("Digite a orientação do navio: ");
-        scanf("%d", &orientacao);
-        inicializaNavio(novoNavioJogadorDois, tipo, orientacao);
 
-        insereNavioJogador(mapaJogadorDois, novoNavioJogadorDois);
-        imprimirMeuMapa(mapaJogadorDois);
-
-    }
+    int tipo, orientacao, ancoraColuna, ancoraLinha;
+    printf("Jogador 1\n");
     while(1)
     {
-        printf("\t\tTurno do jogador 1!!!!!!!!\n\n");
-        imprimirMeuMapa(mapaJogadorUm);
-        realizarTiroJogador(mapaJogadorDois);
-        imprimirMapaAdversario(mapaJogadorDois);
-        printf("\t\tTurno do jogador 2!!!!!!!!\n\n");
-        imprimirMeuMapa(mapaJogadorDois);
-        realizarTiroJogador(mapaJogadorUm);
-        imprimirMapaAdversario(mapaJogadorUm);
-
+        printf("Escolha o Tipo do navio: \n");
+        scanf("%d", &tipo);
     }
+
+}
+
+int main()
+{
+    pthread_t thread_id;
+    if (pthread_create(&thread_id, NULL, jogo, NULL) != 0) {
+        fprintf(stderr, "Falha ao criar thread.\n");
+        return 1;
+    }
+
+
+
+
+    pthread_join(thread_id, NULL);
+    return 0;
 }
